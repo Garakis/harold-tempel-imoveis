@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Harold Tempel Imóveis — Web
 
-## Getting Started
+Site público + painel administrativo para a Harold Tempel Imóveis (Mococa/SP), substituindo a plataforma Kenlo.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router, Turbopack default, Node runtime)
+- **TypeScript 5**
+- **Tailwind CSS v4** (CSS-first com `@theme`)
+- **Supabase** (Postgres + Auth + Storage)
+- **lucide-react** (ícones — exceto marcas Facebook/Instagram que vêm em `social-icons.tsx`)
+
+## Comandos
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev      # http://localhost:3000
+npm run build    # build de produção
+npm run start    # servir build local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variáveis de ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Veja [`.env.example`](./.env.example). O `.env.local` já está populado pro projeto Supabase de dev.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variável | Necessário | Descrição |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | sim | URL do projeto Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | sim | Publishable key (substitui anon key) |
+| `SUPABASE_SERVICE_ROLE_KEY` | não | Necessário só pra operações admin que ignorem RLS |
+| `RESEND_API_KEY` | não | Para e-mails transacionais (a configurar) |
+| `NEXT_PUBLIC_SITE_URL` | sim | URL canônica do site (OG, sitemap) |
 
-## Learn More
+## Estrutura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/
+│   ├── layout.tsx                    Root (fontes, metadata)
+│   ├── (public)/                     Site público com header/footer/whatsapp
+│   │   ├── layout.tsx
+│   │   ├── page.tsx                  Home
+│   │   ├── imoveis/[[...filters]]/   Listagem (catch-all)
+│   │   ├── imovel/[slug]/[codigo]/   Ficha
+│   │   ├── sobre/                    Quem somos
+│   │   ├── financiamento/
+│   │   ├── fale-conosco/
+│   │   ├── cadastre-seu-imovel/
+│   │   ├── encomende-seu-imovel/
+│   │   └── politica-de-privacidade/
+│   └── admin/
+│       ├── login/                    Standalone (sem sidebar)
+│       └── (authed)/                 Auth-gated com sidebar
+│           ├── layout.tsx
+│           ├── page.tsx              Dashboard
+│           ├── imoveis/
+│           ├── leads/
+│           ├── agenda/
+│           ├── proprietarios/
+│           ├── configuracoes/
+│           └── usuarios/
+├── components/
+│   ├── ui/                           Primitivos (Button, Input, Card)
+│   ├── site/                         Header, Footer, Logo, Hero, PropertyCard...
+│   └── admin/                        Sidebar, futuros widgets admin
+├── lib/
+│   ├── supabase/
+│   │   ├── server.ts                 Cliente server (Server Components)
+│   │   ├── client.ts                 Cliente browser (Client Components)
+│   │   ├── middleware.ts             updateSession para o proxy
+│   │   └── database.types.ts         Tipos auto-gerados
+│   ├── domain/
+│   │   └── properties.ts             Domínio: tipos, slug, código, labels
+│   ├── mock/                         Dados mock (remover quando admin estiver populado)
+│   ├── settings.ts                   Site settings cacheados
+│   └── utils.ts                      cn(), formatBRL(), formatArea()
+└── proxy.ts                          Next.js 16 middleware (auth gate /admin)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Pontos importantes Next.js 16
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `params` e `searchParams` são **Promise** — sempre `await`
+- `cookies()`, `headers()`, `draftMode()` são async
+- Middleware foi renomeado pra `proxy` (Node runtime, sem edge)
+- `next/image` usa `images.remotePatterns` (não `domains`)
+- Sem `next lint` — usar ESLint diretamente
 
-## Deploy on Vercel
+## Banco de dados (Supabase)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Migrations aplicadas:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `001_extensions_and_taxonomy` — extensões, profiles, cities, neighborhoods, types, purposes
+- `002_properties_photos_owners` — núcleo: properties, property_photos, owners
+- `003_leads_visits_settings_storage` — leads, visits, site_settings + bucket de fotos
+- `004_security_hardening` — search_path nas funções, lockdown do bucket público
+
+RLS:
+- Tabelas públicas (cities, neighborhoods, types, purposes, settings, profiles): SELECT público
+- Properties/photos: SELECT público apenas se `is_published=true AND status='ativo'`
+- Owners (PII), leads, visits: apenas autenticados
+- Lead INSERT: público (forms)
+
+## Próximos passos (não cobertos no MVP inicial)
+
+1. Criar primeiro usuário (Harold) via Supabase dashboard ou Server Action de bootstrap
+2. Implementar wizard de cadastro de imóvel (4 passos)
+3. Edição de imóvel em abas
+4. Upload de fotos com marca d'água via `sharp`
+5. Server Actions de submissão de forms públicos → leads
+6. Notificação por e-mail (Resend) quando lead chega
+7. Sitemap dinâmico
+8. Deploy (Cloudflare Pages ou Vercel)
+9. Migração de dados (script de scraping do Kenlo)
