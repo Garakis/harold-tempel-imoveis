@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
+import { FormFeedback } from "@/components/site/form-feedback";
+import { submitContactLead } from "@/app/_actions/leads";
 import { getSettings } from "@/lib/settings";
 import type { Metadata } from "next";
 
@@ -9,8 +11,13 @@ export const metadata: Metadata = {
     "Entre em contato com a Harold Tempel Imóveis. Tire suas dúvidas, agende uma visita ou solicite um atendimento.",
 };
 
-export default async function FaleConoscoPage() {
+interface PageProps {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}
+
+export default async function FaleConoscoPage({ searchParams }: PageProps) {
   const settings = await getSettings();
+  const params = await searchParams;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
@@ -18,15 +25,17 @@ export default async function FaleConoscoPage() {
         Fale conosco
       </h1>
       <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
-        <form className="space-y-4">
+        <form action={submitContactLead} className="space-y-4">
+          <FormFeedback ok={params.ok === "1"} error={params.error} />
+
           <div>
             <Label htmlFor="name">Nome *</Label>
-            <Input id="name" name="name" required />
+            <Input id="name" name="name" required minLength={2} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" name="phone" />
+              <Input id="phone" name="phone" type="tel" />
             </div>
             <div>
               <Label htmlFor="email">E-mail *</Label>
@@ -35,7 +44,7 @@ export default async function FaleConoscoPage() {
           </div>
           <div>
             <Label htmlFor="message">Mensagem *</Label>
-            <Textarea id="message" name="message" required rows={6} />
+            <Textarea id="message" name="message" required rows={6} minLength={10} />
           </div>
           <p className="text-xs text-muted-foreground">
             Ao enviar concordo com os termos de uso e política de privacidade.

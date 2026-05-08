@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
+import { FormFeedback } from "@/components/site/form-feedback";
+import { submitRegisterPropertyLead } from "@/app/_actions/leads";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,7 +10,13 @@ export const metadata: Metadata = {
     "Cadastre seu imóvel conosco. Anuncie casas, apartamentos, terrenos, chácaras, sítios e ranchos em Mococa/SP.",
 };
 
-export default function CadastreSeuImovelPage() {
+interface PageProps {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}
+
+export default async function CadastreSeuImovelPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="font-display text-4xl font-extrabold text-navy-800 mb-3">
@@ -18,11 +26,20 @@ export default function CadastreSeuImovelPage() {
         Preencha os dados abaixo e nossa equipe entrará em contato para finalizar o cadastro.
       </p>
 
-      <form className="space-y-5 rounded-xl bg-white border border-border p-6 shadow-card">
+      <form
+        action={submitRegisterPropertyLead}
+        className="space-y-5 rounded-xl bg-white border border-border p-6 shadow-card"
+      >
+        <FormFeedback
+          ok={params.ok === "1"}
+          error={params.error}
+          okMessage="Cadastro recebido! Nossa equipe entrará em contato em até 1 dia útil."
+        />
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="name">Nome *</Label>
-            <Input id="name" name="name" required />
+            <Input id="name" name="name" required minLength={2} />
           </div>
           <div>
             <Label htmlFor="email">E-mail *</Label>
@@ -30,11 +47,11 @@ export default function CadastreSeuImovelPage() {
           </div>
           <div>
             <Label htmlFor="phone">Celular *</Label>
-            <Input id="phone" name="phone" required />
+            <Input id="phone" name="phone" type="tel" required />
           </div>
           <div>
             <Label htmlFor="phone2">Telefone</Label>
-            <Input id="phone2" name="phone2" />
+            <Input id="phone2" name="phone2" type="tel" />
           </div>
         </div>
 

@@ -4,17 +4,19 @@ import { notFound } from "next/navigation";
 import { ChevronRight, MapPin, Bed, Bath, Car, Maximize, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input, Textarea, Label } from "@/components/ui/input";
+import { PropertyContactForm } from "@/components/site/property-contact-form";
 import { formatBRL, formatArea } from "@/lib/utils";
 import { MODALITY_LABEL } from "@/lib/domain/properties";
 import { getPropertyByCode, getPropertyPhotos } from "@/lib/domain/queries";
 
 interface PageProps {
   params: Promise<{ slug: string; codigo: string }>;
+  searchParams: Promise<{ ok?: string; error?: string }>;
 }
 
-export default async function PropertyDetailPage({ params }: PageProps) {
-  const { codigo } = await params;
+export default async function PropertyDetailPage({ params, searchParams }: PageProps) {
+  const { codigo, slug } = await params;
+  const sp = await searchParams;
   // Strip optional -HAR5 suffix if user lands on legacy URL
   const cleanCode = codigo.replace(/-HAR5$/i, "");
   const property = await getPropertyByCode(cleanCode);
@@ -137,46 +139,14 @@ export default async function PropertyDetailPage({ params }: PageProps) {
         </div>
 
         {/* Sidebar */}
-        <aside className="lg:sticky lg:top-28 h-max">
-          <div className="rounded-xl bg-white border border-border p-6 shadow-card">
-            <h3 className="font-display text-lg font-bold text-navy-800 mb-1">
-              Entrar em contato
-            </h3>
-            <div className="mb-4 flex gap-2 text-sm">
-              <button className="flex-1 rounded-pill bg-navy-700 text-white py-2 font-medium">
-                Mensagem
-              </button>
-              <button className="flex-1 rounded-pill border border-border py-2 font-medium text-navy-700">
-                Agendar visita
-              </button>
-            </div>
-            <form className="space-y-3">
-              <div>
-                <Label htmlFor="name">Nome</Label>
-                <Input id="name" name="name" required />
-              </div>
-              <div>
-                <Label htmlFor="email">E-mail</Label>
-                <Input id="email" name="email" type="email" required />
-              </div>
-              <div>
-                <Label htmlFor="phone">Telefone</Label>
-                <Input id="phone" name="phone" />
-              </div>
-              <div>
-                <Label htmlFor="message">Mensagem</Label>
-                <Textarea
-                  id="message"
-                  name="message"
-                  defaultValue={`Olá, tenho interesse no imóvel ${property.code}.`}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Ao enviar concordo com os termos de uso e política de privacidade.
-              </p>
-              <Button type="submit" className="w-full">Enviar mensagem</Button>
-            </form>
-          </div>
+        <aside id="contato" className="lg:sticky lg:top-28 h-max">
+          <PropertyContactForm
+            propertyId={property.id}
+            code={property.code}
+            slug={slug}
+            ok={sp.ok === "1"}
+            error={sp.error}
+          />
         </aside>
       </div>
     </div>
