@@ -21,11 +21,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "imgs.kenlo.io",
       },
-      {
-        // Mock data placeholders (dev only — remove before production)
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
     ],
     qualities: [60, 75, 90],
   },
