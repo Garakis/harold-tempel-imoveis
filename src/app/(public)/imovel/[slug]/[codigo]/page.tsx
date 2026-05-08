@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
 import { formatBRL, formatArea } from "@/lib/utils";
 import { MODALITY_LABEL } from "@/lib/domain/properties";
-import { MOCK_PROPERTIES } from "@/lib/mock/properties";
+import { getPropertyByCode, getPropertyPhotos } from "@/lib/domain/queries";
 
 interface PageProps {
   params: Promise<{ slug: string; codigo: string }>;
@@ -15,8 +15,11 @@ interface PageProps {
 
 export default async function PropertyDetailPage({ params }: PageProps) {
   const { codigo } = await params;
-  const property = MOCK_PROPERTIES.find((p) => p.code === codigo);
+  // Strip optional -HAR5 suffix if user lands on legacy URL
+  const cleanCode = codigo.replace(/-HAR5$/i, "");
+  const property = await getPropertyByCode(cleanCode);
   if (!property) notFound();
+  const allPhotos = await getPropertyPhotos(property.id);
 
   const price =
     property.modality === "aluguel" ? property.rental_price : property.sale_price;
@@ -51,11 +54,11 @@ export default async function PropertyDetailPage({ params }: PageProps) {
 
       {/* Gallery */}
       <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {property.cover_photo && (
+        {allPhotos[0] && (
           <div className="relative aspect-[4/3] sm:col-span-2 sm:row-span-2 sm:aspect-[16/12] overflow-hidden rounded-xl bg-muted">
             <Image
-              src={property.cover_photo.public_url}
-              alt={property.cover_photo.alt_text ?? property.code}
+              src={allPhotos[0].public_url}
+              alt={allPhotos[0].alt_text ?? property.code}
               fill
               sizes="(min-width: 640px) 66vw, 100vw"
               className="object-cover"
@@ -63,11 +66,19 @@ export default async function PropertyDetailPage({ params }: PageProps) {
             />
           </div>
         )}
-        {[1, 2, 3, 4].map((i) => (
+        {allPhotos.slice(1, 5).map((photo) => (
           <div
-            key={i}
+            key={photo.id}
             className="relative hidden aspect-[4/3] overflow-hidden rounded-xl bg-muted sm:block"
-          />
+          >
+            <Image
+              src={photo.public_url}
+              alt={photo.alt_text ?? property.code}
+              fill
+              sizes="33vw"
+              className="object-cover"
+            />
+          </div>
         ))}
       </div>
 

@@ -2,12 +2,18 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { PropertyGrid } from "@/components/site/property-grid";
 import { Button } from "@/components/ui/button";
-import { MOCK_PROPERTIES } from "@/lib/mock/properties";
+import { listProperties } from "@/lib/domain/queries";
 
 interface PageProps {
   params: Promise<{ filters?: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
+
+const MODALITY_SLUG_TO_DB: Record<string, "venda" | "aluguel" | "temporada"> = {
+  "a-venda": "venda",
+  "para-alugar": "aluguel",
+  temporada: "temporada",
+};
 
 const MODALITY_LABEL: Record<string, string> = {
   "a-venda": "à venda",
@@ -26,7 +32,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export default async function ImoveisPage({ params, searchParams }: PageProps) {
   const { filters = [] } = await params;
-  await searchParams;
+  const sp = await searchParams;
   const [modalitySlug, typeSlug, neighborhoodSlug] = filters;
 
   // Build heading and breadcrumb
@@ -43,8 +49,12 @@ export default async function ImoveisPage({ params, searchParams }: PageProps) {
     }
   }
 
-  // For now use mocks; real implementation will filter by params from Supabase.
-  const properties = MOCK_PROPERTIES;
+  const properties = await listProperties({
+    modality: modalitySlug ? MODALITY_SLUG_TO_DB[modalitySlug] : undefined,
+    type_slug: typeSlug,
+    neighborhood_slug: neighborhoodSlug,
+    query: typeof sp.q === "string" ? sp.q : undefined,
+  });
 
   const breadcrumbs = [
     { href: "/", label: "Home" },
