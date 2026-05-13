@@ -68,24 +68,26 @@ export function PropertyGallery({ photos, title, contactHref = "#contato" }: Pro
           {photos.map((photo, i) => (
             <div
               key={photo.id}
-              className="relative flex-shrink-0 snap-start aspect-[4/3] w-[80%] sm:w-[55%] lg:w-[48%] overflow-hidden rounded-xl bg-muted"
+              className="relative flex-shrink-0 snap-start aspect-[4/3] w-[80%] sm:w-[55%] lg:w-[48%] overflow-hidden rounded-xl bg-muted group/slide"
             >
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label="Ver todas as fotos"
+                className="absolute inset-0 z-0 cursor-zoom-in"
+              />
               <Image
                 src={photo.public_url}
                 alt={photo.alt_text ?? title}
                 fill
                 sizes="(min-width: 1024px) 50vw, (min-width: 640px) 55vw, 80vw"
-                className="object-cover"
+                className="object-cover pointer-events-none transition-transform duration-500 group-hover/slide:scale-[1.02]"
                 priority={i < 2}
               />
               {i === 0 && (
-                <button
-                  type="button"
-                  onClick={() => setOpen(true)}
-                  className="absolute left-4 bottom-4 inline-flex items-center gap-2 rounded-pill bg-white/95 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-navy-800 shadow-card hover:bg-white transition-colors"
-                >
+                <span className="pointer-events-none absolute left-4 bottom-4 inline-flex items-center gap-2 rounded-pill bg-white/95 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-navy-800 shadow-card">
                   <ImageIcon size={16} /> {photos.length} Fotos
-                </button>
+                </span>
               )}
             </div>
           ))}
