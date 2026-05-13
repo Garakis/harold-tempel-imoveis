@@ -49,11 +49,20 @@ export default async function ImoveisPage({ params, searchParams }: PageProps) {
     }
   }
 
+  const num = (v: unknown) => {
+    if (typeof v !== "string") return undefined;
+    const n = parseInt(v, 10);
+    return Number.isNaN(n) ? undefined : n;
+  };
+
   const properties = await listProperties({
     modality: modalitySlug ? MODALITY_SLUG_TO_DB[modalitySlug] : undefined,
-    type_slug: typeSlug,
+    type_slug: typeSlug ?? (typeof sp.tipo === "string" ? sp.tipo : undefined),
     neighborhood_slug: neighborhoodSlug,
     query: typeof sp.q === "string" ? sp.q : undefined,
+    bedrooms_min: num(sp.quartos),
+    price_min: num(sp.preco_min),
+    price_max: num(sp.preco_max),
   });
 
   const breadcrumbs = [

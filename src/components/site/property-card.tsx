@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Bed, Bath, Car, Maximize, Crown } from "lucide-react";
 import { Card, Badge } from "@/components/ui/card";
+import { PropertyCardGallery } from "@/components/site/property-card-gallery";
 import { formatBRL, formatArea, cn } from "@/lib/utils";
 import {
   type PropertyListing,
@@ -26,42 +26,42 @@ export function PropertyCard({ property, className }: PropertyCardProps) {
       : formatBRL(price);
 
   const area = property.built_area_m2 ?? property.total_area_m2;
+  const fallbackAlt = property.title ?? property.code;
+  const photos =
+    property.preview_photos && property.preview_photos.length > 0
+      ? property.preview_photos
+      : property.cover_photo
+        ? [property.cover_photo]
+        : [];
 
   return (
     <Card className={cn("group overflow-hidden hover:shadow-card-hover transition-shadow", className)}>
-      <Link href={url} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          {property.cover_photo ? (
-            <Image
-              src={property.cover_photo.public_url}
-              alt={property.cover_photo.alt_text ?? property.title ?? property.code}
-              fill
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-              Sem foto
-            </div>
-          )}
-          {/* Photo count badge */}
-          {property.photos_count > 1 && (
-            <Badge className="absolute right-3 bottom-3 bg-black/70 text-white border-transparent">
-              {property.photos_count} fotos
-            </Badge>
-          )}
-          {/* Featured */}
-          {property.is_super_featured ? (
-            <Badge className="absolute left-3 top-3 bg-gold-500 text-white border-transparent gap-1">
-              <Crown size={12} /> Super destaque
-            </Badge>
-          ) : property.is_featured ? (
-            <Badge className="absolute left-3 top-3 bg-gold-500/90 text-white border-transparent">
-              Destaque
-            </Badge>
-          ) : null}
-        </div>
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <Link href={url} className="absolute inset-0 z-0" aria-label={fallbackAlt} />
+        <PropertyCardGallery
+          photos={photos}
+          fallbackAlt={fallbackAlt}
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+        />
+        {/* Photo count badge */}
+        {property.photos_count > 1 && (
+          <Badge className="absolute right-3 bottom-3 z-10 bg-black/70 text-white border-transparent pointer-events-none">
+            {property.photos_count} fotos
+          </Badge>
+        )}
+        {/* Featured */}
+        {property.is_super_featured ? (
+          <Badge className="absolute left-3 top-3 z-10 bg-gold-500 text-white border-transparent gap-1 pointer-events-none">
+            <Crown size={12} /> Super destaque
+          </Badge>
+        ) : property.is_featured ? (
+          <Badge className="absolute left-3 top-3 z-10 bg-gold-500/90 text-white border-transparent pointer-events-none">
+            Destaque
+          </Badge>
+        ) : null}
+      </div>
 
+      <Link href={url} className="block">
         <div className="p-4 space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Badge className="font-mono">{property.code}</Badge>

@@ -141,6 +141,58 @@ export async function submitOrderPropertyLead(formData: FormData) {
 }
 
 /**
+ * Used by the homepage search chat widget. Captures lead + search context.
+ * `next` is the listing URL the chat decided to redirect to.
+ */
+export async function submitSearchChatLead(formData: FormData) {
+  const name = clean(formData.get("name"));
+  const phone = clean(formData.get("phone"));
+  const next = clean(formData.get("next")) || "/imoveis";
+  const objective = clean(formData.get("objective"));
+  const purpose = clean(formData.get("purpose"));
+  const property_type = clean(formData.get("property_type"));
+  const bedrooms = clean(formData.get("bedrooms"));
+  const price_range = clean(formData.get("price_range"));
+  const city = clean(formData.get("city"));
+
+  if (!name || !phone) {
+    // Lead capture step was skipped; just go to results.
+    redirect(next);
+  }
+
+  const messageLines = [
+    `Veio do chat de busca da home.`,
+    objective ? `Objetivo: ${objective}` : null,
+    purpose ? `Finalidade: ${purpose}` : null,
+    property_type ? `Tipo: ${property_type}` : null,
+    bedrooms ? `Quartos: ${bedrooms}+` : null,
+    price_range ? `Faixa de preço: ${price_range}` : null,
+    city ? `Cidade: ${city}` : null,
+  ].filter(Boolean);
+
+  await insertLead({
+    type: "contato",
+    source: "form_contato",
+    name,
+    phone,
+    message: messageLines.join("\n"),
+    metadata: {
+      from: "search_chat",
+      objective,
+      purpose,
+      property_type,
+      bedrooms,
+      price_range,
+      city,
+      search_url: next,
+    },
+    redirect_to: next,
+  });
+
+  redirect(next);
+}
+
+/**
  * Used by the property detail page contact form.
  */
 export async function submitPropertyInterestLead(formData: FormData) {

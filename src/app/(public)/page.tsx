@@ -2,16 +2,19 @@ import Link from "next/link";
 import { ArrowRight, Building2, DollarSign, FileText } from "lucide-react";
 import { HeroSearch } from "@/components/site/hero-search";
 import { PropertyGrid } from "@/components/site/property-grid";
-import { getFeaturedProperties, listProperties } from "@/lib/domain/queries";
+import { MostSearchedCarousel } from "@/components/site/most-searched-carousel";
+import {
+  getFeaturedProperties,
+  getTopNeighborhoodCards,
+} from "@/lib/domain/queries";
 import { getSettings } from "@/lib/settings";
 
 export default async function HomePage() {
-  const [settings, featured, all] = await Promise.all([
+  const [settings, featured, topCards] = await Promise.all([
     getSettings(),
     getFeaturedProperties(),
-    listProperties(),
+    getTopNeighborhoodCards(10),
   ]);
-  const popular = all.slice(0, 12);
 
   return (
     <>
@@ -98,12 +101,14 @@ export default async function HomePage() {
       </section>
 
       {/* IMÓVEIS MAIS BUSCADOS */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-center font-display text-3xl font-bold text-navy-800 mb-10">
-          Imóveis mais buscados
-        </h2>
-        <PropertyGrid properties={popular} />
-      </section>
+      {topCards.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+          <h2 className="text-center font-display text-3xl font-bold text-navy-800 mb-10">
+            Imóveis mais buscados
+          </h2>
+          <MostSearchedCarousel cards={topCards} />
+        </section>
+      )}
 
       {/* CONTACT CARD */}
       <section className="bg-muted/30 border-t border-border">

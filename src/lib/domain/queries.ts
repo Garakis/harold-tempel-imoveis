@@ -53,6 +53,10 @@ function rowToListing(row: unknown): PropertyListing {
     return a.sort_order - b.sort_order;
   });
   const cover = sorted[0] ?? null;
+  const previewPhotos = sorted.slice(0, 5).map((p) => ({
+    public_url: p.public_url,
+    alt_text: p.alt_text,
+  }));
 
   return {
     ...(row as object),
@@ -60,6 +64,7 @@ function rowToListing(row: unknown): PropertyListing {
     city: r.city ?? { name: "Mococa", uf: "SP", slug: "mococa" },
     neighborhood: r.neighborhood ?? null,
     cover_photo: cover ? { public_url: cover.public_url, alt_text: cover.alt_text } : null,
+    preview_photos: previewPhotos,
     photos_count: photos.length,
   } as PropertyListing;
 }
@@ -167,3 +172,62 @@ export const getPropertyPhotos = cache(async (propertyId: string) => {
     .order("sort_order", { ascending: true });
   return data ?? [];
 });
+
+export interface NeighborhoodCard {
+  neighborhood_slug: string;
+  neighborhood_name: string;
+  city_slug: string;
+  city_name: string;
+  city_uf: string;
+  type_slug: string; // dominant type for SEO label
+  type_label: string; // pluralized ("Casas", "Apartamentos", ...)
+  count: number;
+  cover_url: string | null;
+}
+
+const TYPE_PLURAL_LABEL: Record<string, string> = {
+  casa: "Casas",
+  apartamento: "Apartamentos",
+  terreno: "Terrenos",
+  chacara: "Chácaras",
+  sitio: "Sítios",
+  rancho: "Ranchos",
+};
+
+/**
+ * Top neighborhoods by published-property count, with a representative photo.
+ * Used by the "Imóveis mais buscados" carousel on the home.
+ */
+export const getTopNeighborhoodCards = cache(
+  async (limit = 10): Promise<NeighborhoodCard[]> => {
+    const properties = await listProperties();
+    const map = new Map<string, NeighborhoodCard>();
+    for (const p of properties) {
+      if (!p.neighborhood) continue;
+      const key = `${p.neighborhood.slug}__${p.type.slug}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+        if (!existing.cover_url && p.cover_photo) {
+          existing.cover_url = p.cover_photo.public_url;
+        }
+      } else {
+        map.set(key, {
+          neighborhood_slug: p.neighborhood.slug,
+          neighborhood_name: p.neighborhood.name,
+          city_slug: p.city.slug,
+          city_name: p.city.name,
+          city_uf: p.city.uf,
+          type_slug: p.type.slug,
+          type_label: TYPE_PLURAL_LABEL[p.type.slug] ?? "Imóveis",
+          count: 1,
+          cover_url: p.cover_photo?.public_url ?? null,
+        });
+      }
+    }
+    return Array.from(map.values())
+      .filter((c) => c.cover_url)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+  }
+);

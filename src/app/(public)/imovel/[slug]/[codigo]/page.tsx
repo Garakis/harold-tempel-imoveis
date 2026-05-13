@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ChevronRight, MapPin, Bed, Bath, Car, Maximize, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PropertyContactForm } from "@/components/site/property-contact-form";
+import { PropertyGallery } from "@/components/site/property-gallery";
 import { formatBRL, formatArea } from "@/lib/utils";
 import { MODALITY_LABEL } from "@/lib/domain/properties";
 import { getPropertyByCode, getPropertyPhotos } from "@/lib/domain/queries";
@@ -55,33 +55,16 @@ export default async function PropertyDetailPage({ params, searchParams }: PageP
       </div>
 
       {/* Gallery */}
-      <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {allPhotos[0] && (
-          <div className="relative aspect-[4/3] sm:col-span-2 sm:row-span-2 sm:aspect-[16/12] overflow-hidden rounded-xl bg-muted">
-            <Image
-              src={allPhotos[0].public_url}
-              alt={allPhotos[0].alt_text ?? property.code}
-              fill
-              sizes="(min-width: 640px) 66vw, 100vw"
-              className="object-cover"
-              priority
-            />
-          </div>
-        )}
-        {allPhotos.slice(1, 5).map((photo) => (
-          <div
-            key={photo.id}
-            className="relative hidden aspect-[4/3] overflow-hidden rounded-xl bg-muted sm:block"
-          >
-            <Image
-              src={photo.public_url}
-              alt={photo.alt_text ?? property.code}
-              fill
-              sizes="33vw"
-              className="object-cover"
-            />
-          </div>
-        ))}
+      <div className="mb-8">
+        <PropertyGallery
+          photos={allPhotos.map((p) => ({
+            id: p.id,
+            public_url: p.public_url,
+            alt_text: p.alt_text,
+          }))}
+          title={property.title ?? `${property.type.name} ${property.code}`}
+          contactHref="#contato"
+        />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
@@ -139,7 +122,7 @@ export default async function PropertyDetailPage({ params, searchParams }: PageP
         </div>
 
         {/* Sidebar */}
-        <aside id="contato" className="lg:sticky lg:top-28 h-max">
+        <aside id="contato" className="self-start lg:sticky lg:top-28">
           <PropertyContactForm
             propertyId={property.id}
             code={property.code}
@@ -149,6 +132,28 @@ export default async function PropertyDetailPage({ params, searchParams }: PageP
           />
         </aside>
       </div>
+
+      {/* Mobile contact CTA (fixed bottom bar) */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-white/95 backdrop-blur-md px-4 py-3 lg:hidden shadow-card-hover">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {MODALITY_LABEL[property.modality]}
+            </div>
+            <div className="text-lg font-bold text-navy-800 leading-none">
+              {formatBRL(price)}
+            </div>
+          </div>
+          <a
+            href="#contato"
+            className="inline-flex items-center justify-center rounded-pill bg-navy-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 transition-colors"
+          >
+            Entrar em contato
+          </a>
+        </div>
+      </div>
+      {/* Spacer to avoid mobile CTA overlapping the bottom of the page */}
+      <div aria-hidden className="h-20 lg:hidden" />
     </div>
   );
 }

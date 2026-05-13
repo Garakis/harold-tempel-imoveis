@@ -15,6 +15,8 @@ export type PropertyListing = Property & {
   city: Pick<City, "name" | "uf" | "slug">;
   neighborhood: Pick<Neighborhood, "name" | "slug"> | null;
   cover_photo: Pick<PropertyPhoto, "public_url" | "alt_text"> | null;
+  /** First 5 photos (cover first, then sort_order) for inline card carousel. */
+  preview_photos: Array<Pick<PropertyPhoto, "public_url" | "alt_text">>;
   photos_count: number;
 };
 
