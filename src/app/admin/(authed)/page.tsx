@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Building2, Inbox, Calendar, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -5,7 +6,7 @@ export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
   // Aggregate counts (graceful when table is empty)
-  const [propertiesActive, propertiesStale, leadsNew, visitsUpcoming] = await Promise.all([
+  const [propertiesActive, propertiesStale, leadsNew, visitsUpcoming, users] = await Promise.all([
     supabase
       .from("properties")
       .select("*", { count: "exact", head: true })
@@ -24,7 +25,69 @@ export default async function AdminDashboardPage() {
       .select("*", { count: "exact", head: true })
       .eq("status", "agendado")
       .gte("scheduled_at", new Date().toISOString()),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
   ]);
+
+  // Build context-aware next-steps
+  const userCount = users.count ?? 0;
+  const activeCount = propertiesActive.count ?? 0;
+  const staleCount = propertiesStale.count ?? 0;
+  const nextSteps: Array<{ key: string; node: React.ReactNode }> = [];
+  if (activeCount === 0) {
+    nextSteps.push({
+      key: "first-property",
+      node: (
+        <>
+          Cadastrar os primeiros imóveis em{" "}
+          <Link href="/admin/imoveis" className="text-navy-700 underline">
+            Imóveis
+          </Link>
+          .
+        </>
+      ),
+    });
+  }
+  if (staleCount > 0) {
+    nextSteps.push({
+      key: "stale",
+      node: (
+        <>
+          Revisar <strong>{staleCount}</strong> imóv{staleCount === 1 ? "el" : "eis"} sem
+          atualização há ≥90 dias em{" "}
+          <Link href="/admin/imoveis" className="text-navy-700 underline">
+            Imóveis
+          </Link>
+          .
+        </>
+      ),
+    });
+  }
+  nextSteps.push({
+    key: "settings",
+    node: (
+      <>
+        Conferir{" "}
+        <Link href="/admin/configuracoes" className="text-navy-700 underline">
+          Configurações
+        </Link>{" "}
+        da imobiliária (telefones, endereço, redes sociais).
+      </>
+    ),
+  });
+  if (userCount < 2) {
+    nextSteps.push({
+      key: "second-user",
+      node: (
+        <>
+          Cadastrar um segundo usuário (esposa, sócio, corretor) em{" "}
+          <Link href="/admin/usuarios" className="text-navy-700 underline">
+            Usuários
+          </Link>
+          .
+        </>
+      ),
+    });
+  }
 
   const cards = [
     {
@@ -81,16 +144,18 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="mt-10 rounded-xl bg-white border border-border p-6 shadow-card">
-        <h2 className="font-display text-lg font-bold text-navy-800 mb-2">
-          Próximos passos
-        </h2>
-        <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground/80">
-          <li>Cadastrar os primeiros imóveis em <a className="text-navy-700 underline" href="/admin/imoveis">Imóveis</a>.</li>
-          <li>Conferir <a className="text-navy-700 underline" href="/admin/configuracoes">Configurações</a> da imobiliária (telefones, endereço, redes sociais).</li>
-          <li>Cadastrar a Roberta como segundo usuário em <a className="text-navy-700 underline" href="/admin/usuarios">Usuários</a>.</li>
-        </ol>
-      </div>
+      {nextSteps.length > 0 && (
+        <div className="mt-10 rounded-xl bg-white border border-border p-6 shadow-card">
+          <h2 className="font-display text-lg font-bold text-navy-800 mb-2">
+            Próximos passos
+          </h2>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground/80">
+            {nextSteps.map((step) => (
+              <li key={step.key}>{step.node}</li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }
