@@ -1,13 +1,20 @@
-import Link from "next/link";
-import { Phone, Menu } from "lucide-react";
+import { Phone } from "lucide-react";
 import { Logo } from "./logo";
 import { FacebookIcon, InstagramIcon } from "./social-icons";
+import { MainMenu } from "./main-menu";
 import { getSettings } from "@/lib/settings";
 
 export async function SiteHeader() {
   const settings = await getSettings();
   const whatsappLink = `https://wa.me/${settings.contact.whatsapp}`;
   const phoneFormatted = settings.contact.phone;
+  const addressLine = `${settings.contact.address.street}${
+    settings.contact.address.complement
+      ? ` — ${settings.contact.address.complement}`
+      : ""
+  }, ${settings.contact.address.neighborhood} — ${
+    settings.contact.address.city
+  }/${settings.contact.address.uf}`;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-border">
@@ -55,13 +62,14 @@ export async function SiteHeader() {
               </a>
             )}
 
-            <Link
-              href="/menu"
-              className="ml-2 inline-flex h-10 w-10 items-center justify-center rounded-md text-navy-700 hover:bg-navy-50 transition-colors"
-              aria-label="Menu"
-            >
-              <Menu size={24} />
-            </Link>
+            <MainMenu
+              phone={phoneFormatted}
+              whatsappLink={whatsappLink}
+              facebookUrl={settings.social.facebook}
+              instagramUrl={settings.social.instagram}
+              creci={settings.company.creci}
+              address={addressLine}
+            />
           </nav>
         </div>
       </div>
