@@ -38,7 +38,7 @@ export default async function BootstrapPage({ searchParams }: PageProps) {
     <div className="min-h-svh flex items-center justify-center bg-navy-900 p-6">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-card-hover">
         <div className="mb-8 flex justify-center">
-          <Logo href={null} />
+          <Logo href={null} size="h-16" />
         </div>
 
         <h1 className="font-display text-2xl font-bold text-navy-800 text-center">

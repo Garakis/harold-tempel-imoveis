@@ -61,7 +61,7 @@ export async function SiteFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <Logo variant="light" href="/" />
+            <Logo variant="onDark" href="/" size="h-16" />
             <p className="mt-4 max-w-sm text-sm text-white/70">
               {settings.company.tagline}. Imobiliária em {settings.contact.address.city}/
               {settings.contact.address.uf}, CRECI {settings.company.creci}.

@@ -21,8 +21,8 @@ export function AdminSidebar() {
 
   return (
     <aside className="flex flex-col w-64 shrink-0 border-r border-border bg-white min-h-svh">
-      <div className="px-5 py-5 border-b border-border">
-        <Logo href="/admin" />
+      <div className="px-5 py-5 border-b border-border flex justify-center">
+        <Logo href="/admin" size="h-14" />
       </div>
 
       <nav className="flex-1 p-3 space-y-1">

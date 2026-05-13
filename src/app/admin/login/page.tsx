@@ -24,7 +24,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
       <aside className="hidden lg:flex flex-col items-center justify-center bg-navy-900 text-white p-10 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,rgba(201,169,97,0.5),transparent_50%)]" />
         <div className="relative z-10 max-w-md text-center">
-          <Logo variant="light" href={null} className="justify-center" />
+          <Logo variant="onDark" href={null} size="h-24" />
           <h1 className="mt-10 font-display text-3xl font-bold leading-tight">
             Painel administrativo
           </h1>
@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
       <main className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-8">
           <div className="lg:hidden flex justify-center">
-            <Logo href={null} />
+            <Logo href={null} size="h-16" />
           </div>
 
           <div>
