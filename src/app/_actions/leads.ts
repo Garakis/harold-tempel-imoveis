@@ -3,6 +3,13 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/send";
+import {
+  renderLeadNotificationEmail,
+  renderLeadAutoResponse,
+  type LeadNotifyData,
+} from "@/lib/email/templates";
+import { getSettings } from "@/lib/settings";
 import type { Database } from "@/lib/supabase/database.types";
 
 type LeadType = Database["public"]["Enums"]["lead_type"];
@@ -49,25 +56,108 @@ async function insertLead(input: SubmitLeadInput) {
   const meta = await getRequestMeta();
   const supabase = await createClient();
 
-  const { error } = await supabase.from("leads").insert({
-    type: input.type,
-    source: input.source,
-    property_id: input.property_id ?? null,
-    name: input.name,
-    email: input.email ?? null,
-    phone: input.phone ?? null,
-    message: input.message ?? null,
-    metadata: (input.metadata ?? {}) as never,
-    status: "novo",
-    user_agent: meta.user_agent,
-    // Note: ip_address column expects inet type. We pass null and let pg default it.
-  });
+  const { data: insertedRows, error } = await supabase
+    .from("leads")
+    .insert({
+      type: input.type,
+      source: input.source,
+      property_id: input.property_id ?? null,
+      name: input.name,
+      email: input.email ?? null,
+      phone: input.phone ?? null,
+      message: input.message ?? null,
+      metadata: (input.metadata ?? {}) as never,
+      status: "novo",
+      user_agent: meta.user_agent,
+      // Note: ip_address column expects inet type. We pass null and let pg default it.
+    })
+    .select("id");
 
   if (error) {
     console.error("Lead insert error:", error);
     return { error: "Não foi possível enviar agora. Tente novamente em instantes." };
   }
+
+  // Fire-and-forget email notifications. Failures must NOT block the user.
+  const leadId = insertedRows?.[0]?.id ?? null;
+  notifyLead(input, leadId).catch((e) =>
+    console.error("Email notification failed:", e)
+  );
+
   return { error: null };
+}
+
+async function notifyLead(input: SubmitLeadInput, leadId: string | null) {
+  const settings = await getSettings();
+  const supabase = await createClient();
+
+  // Look up property details if attached
+  let property_code: string | null = null;
+  let property_title: string | null = null;
+  let property_slug: string | null = null;
+  if (input.property_id) {
+    const { data } = await supabase
+      .from("properties")
+      .select("code, title, slug")
+      .eq("id", input.property_id)
+      .maybeSingle();
+    property_code = data?.code ?? null;
+    property_title = data?.title ?? null;
+    property_slug = data?.slug ?? null;
+  }
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://harold-tempel-imoveis.vercel.app";
+  const adminUrl = leadId
+    ? `${siteUrl}/admin/leads/${leadId}`
+    : `${siteUrl}/admin/leads`;
+  const propertyUrl =
+    property_slug && property_code
+      ? `${siteUrl}/imovel/${property_slug}/${property_code}`
+      : null;
+  const whatsappUrl = `https://wa.me/${settings.contact.whatsapp}`;
+
+  const notifyTo =
+    process.env.LEAD_NOTIFY_TO ?? "robertaperetotempel@gmail.com";
+
+  // 1) Internal notification
+  const notify = renderLeadNotificationEmail({
+    type: input.type as LeadNotifyData["type"],
+    source: input.source,
+    name: input.name,
+    email: input.email ?? null,
+    phone: input.phone ?? null,
+    message: input.message ?? null,
+    property_code,
+    property_title,
+    property_url: propertyUrl,
+    admin_url: adminUrl,
+    metadata: input.metadata,
+  });
+  await sendEmail({
+    to: notifyTo,
+    subject: notify.subject,
+    html: notify.html,
+    replyTo: input.email ?? undefined,
+  });
+
+  // 2) Auto-response back to the lead (only if email provided)
+  if (input.email) {
+    const auto = renderLeadAutoResponse({
+      name: input.name,
+      type: input.type as LeadNotifyData["type"],
+      property_code,
+      property_title,
+      property_url: propertyUrl,
+      whatsapp_url: whatsappUrl,
+    });
+    await sendEmail({
+      to: input.email,
+      subject: auto.subject,
+      html: auto.html,
+    });
+  }
 }
 
 /**
