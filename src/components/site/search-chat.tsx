@@ -223,7 +223,7 @@ export function SearchChat() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar chat" : "Abrir chat de busca"}
-        className="fixed bottom-4 left-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold-500 text-white shadow-card-hover hover:bg-gold-600 transition-colors"
+        className="fixed bottom-24 left-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-gold-500 text-white shadow-card-hover hover:bg-gold-600 transition-colors lg:bottom-4"
       >
         {open ? <X size={22} /> : <MessageCircle size={24} />}
       </button>
@@ -231,7 +231,7 @@ export function SearchChat() {
       {/* Panel */}
       {open && (
         <div
-          className="fixed bottom-24 left-4 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-2xl bg-white shadow-card-hover border border-border flex flex-col overflow-hidden"
+          className="fixed bottom-44 left-4 z-40 w-[calc(100vw-2rem)] max-w-sm rounded-2xl bg-white shadow-card-hover border border-border flex flex-col overflow-hidden lg:bottom-24"
           style={{ maxHeight: "min(80vh, 600px)" }}
           role="dialog"
           aria-label="Chat de busca"
